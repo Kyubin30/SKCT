@@ -6,6 +6,15 @@ import "react-pdf/dist/Page/TextLayer.css";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
+// Self-hosted cmaps/standard fonts (copied from pdfjs-dist into public/pdfjs) so PDFs
+// with non-embedded CJK fonts (e.g. Korean exam text) render instead of erroring out.
+// Must be a stable reference - react-pdf reloads the document if `options` changes identity.
+const PDF_OPTIONS = {
+  cMapUrl: "/pdfjs/cmaps/",
+  cMapPacked: true,
+  standardFontDataUrl: "/pdfjs/standard_fonts/",
+};
+
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 2;
 const SCALE_STEP = 0.1;
@@ -90,6 +99,7 @@ export default function PDFViewer() {
           <div className={`pdf-document-container ${loading ? "loading" : "loaded"}`}>
             <Document
               file={file}
+              options={PDF_OPTIONS}
               onLoadSuccess={onDocLoadSuccess}
               onLoadProgress={onLoadProgress}
               onLoadError={onLoadError}
