@@ -22,15 +22,21 @@ npm run dev
 ## 빌드
 
 ```bash
-npm run build
-npm run preview   # 빌드 결과 미리보기
+npm run build      # docs/ 에 결과물 생성 (+ .nojekyll)
+npm run preview    # 빌드 결과 미리보기
 ```
 
 ## GitHub Pages 배포
 
-`main` 브랜치에 push하면 `.github/workflows/deploy.yml`이 자동으로 빌드해서 GitHub Pages에 배포한다. 저장소가 `Kyubin30/SKCT`이므로 배포 주소는 `https://kyubin30.github.io/SKCT/` 이다.
+`npm run build`가 `dist/`가 아니라 `docs/`에 바로 결과물을 만든다. 저장소 **Settings → Pages → Source**를 **Deploy from a branch**로, 브랜치를 **main / docs**로 설정하면 된다(최초 1회만). 저장소가 `Kyubin30/SKCT`이므로 배포 주소는 `https://kyubin30.github.io/SKCT/` 이다.
 
-처음 한 번은 저장소 **Settings → Pages → Source**를 **GitHub Actions**로 설정해야 워크플로가 배포 권한을 가진다.
+이후 변경사항을 배포하려면:
+```bash
+npm run build
+git add docs
+git commit -m "docs: rebuild"
+git push
+```
 
 ## 기술 스택
 
