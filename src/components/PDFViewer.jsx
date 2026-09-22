@@ -10,10 +10,12 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 // Self-hosted cmaps/standard fonts (copied from pdfjs-dist into public/pdfjs) so PDFs
 // with non-embedded CJK fonts (e.g. Korean exam text) render instead of erroring out.
 // Must be a stable reference - react-pdf reloads the document if `options` changes identity.
+// BASE_URL (not a hardcoded "/") so these still resolve under a subpath, e.g. GitHub Pages'
+// /SKCT/ base.
 const PDF_OPTIONS = {
-  cMapUrl: "/pdfjs/cmaps/",
+  cMapUrl: `${import.meta.env.BASE_URL}pdfjs/cmaps/`,
   cMapPacked: true,
-  standardFontDataUrl: "/pdfjs/standard_fonts/",
+  standardFontDataUrl: `${import.meta.env.BASE_URL}pdfjs/standard_fonts/`,
 };
 
 const MIN_SCALE = 0.5;

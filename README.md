@@ -1,16 +1,37 @@
-# React + Vite
+# SKCT 시험창
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+SKCT 모의시험 연습용 웹앱. PDF 문제지 + OMR 답안지 + 타이머 + 계산기 + 메모장/그림판을 한 화면에서 쓸 수 있다.
 
-Currently, two official plugins are available:
+## 주요 기능
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **PDF 문제지**: 업로드 후 확대/축소(버튼 또는 슬라이더), 스크롤로 이어보기. 대용량 PDF도 스크롤한 페이지만 순차적으로 렌더링.
+- **OMR 답안지**: 1~100번, 1~5번 마킹. 채점 후 전체 문항을 정답/오답/미답 색상으로 구분해 보여주고 카테고리별 필터 제공. 문제 번호를 클릭하면 그 문제를 풀 때의 메모/그림판 내용을 스냅샷으로 다시 볼 수 있음.
+- **타이머**: 기본 스톱워치 모드(75분/100분/사용자 지정) + 모의고사 모드(언어이해/자료해석/창의수리/언어추리/수열 각 15분, 섹션 사이 1분 휴식). 모의고사 모드 진행 중에는 해당 섹션의 문항 구간(예: 1~20번)만 OMR에서 마킹 가능.
+- **계산기 / 메모장 / 그림판**: 새로고침해도 내용이 유지됨(로컬 저장). 각 도구의 초기화 버튼으로 직접 지울 수 있음.
+- **오답노트 PDF**: 채점 후 "오답노트 PDF로 저장" 버튼 → 브라우저 인쇄 대화상자에서 "PDF로 저장". 못 푼 문제 번호 목록과, 틀린 문제별 메모/그림판 내용이 정리되어 출력됨.
 
-## React Compiler
+## 로컬 실행
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev
+```
 
-## Expanding the Oxlint configuration
+`http://localhost:5173` 에서 확인.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 빌드
+
+```bash
+npm run build
+npm run preview   # 빌드 결과 미리보기
+```
+
+## GitHub Pages 배포
+
+`main` 브랜치에 push하면 `.github/workflows/deploy.yml`이 자동으로 빌드해서 GitHub Pages에 배포한다. 저장소가 `Kyubin30/SKCT`이므로 배포 주소는 `https://kyubin30.github.io/SKCT/` 이다.
+
+처음 한 번은 저장소 **Settings → Pages → Source**를 **GitHub Actions**로 설정해야 워크플로가 배포 권한을 가진다.
+
+## 기술 스택
+
+React 19 + Vite, `react-pdf`(PDF 렌더링), 상태관리 라이브러리 없이 로컬 `useState` + `localStorage` 커스텀 훅만 사용.
