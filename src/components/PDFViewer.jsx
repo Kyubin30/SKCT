@@ -109,6 +109,15 @@ export default function PDFViewer() {
           <div className="pdf-controls">
             <div className="zoom-controls">
               <button className="zoom-btn" onClick={() => setZoom(scale - SCALE_STEP)} disabled={scale <= MIN_SCALE}>-</button>
+              <input
+                type="range"
+                className="zoom-slider"
+                min={MIN_SCALE * 100}
+                max={MAX_SCALE * 100}
+                step={10}
+                value={Math.round(scale * 100)}
+                onChange={(e) => setZoom(Number(e.target.value) / 100)}
+              />
               <span className="zoom-level">{Math.round(scale * 100)}%</span>
               <button className="zoom-btn" onClick={() => setZoom(scale + SCALE_STEP)} disabled={scale >= MAX_SCALE}>+</button>
               <button className="zoom-reset" onClick={() => setZoom(1)}>초기화</button>

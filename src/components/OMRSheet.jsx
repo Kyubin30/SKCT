@@ -11,10 +11,27 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
   const [gradingResult, setGradingResult] = useState(null);
   const [gradingMode, setGradingMode] = useState(false);
   const [wrongAnswers, setWrongAnswers] = useState([]);
+  const [snapshots, setSnapshots] = useLocalStorage("skct-question-snapshots", {});
+  const [viewingSnapshot, setViewingSnapshot] = useState(null);
 
   useEffect(() => {
     onGradingToggle?.(gradingMode);
   }, [gradingMode, onGradingToggle]);
+
+  // NotePad already keeps its live content in localStorage - copy whatever's
+  // there right now into this question's slot instead of lifting shared state.
+  const captureSnapshot = (questionNum) => {
+    let memo = "";
+    try {
+      const raw = localStorage.getItem("skct-notepad-memo");
+      memo = raw ? JSON.parse(raw) : "";
+    } catch {
+      // ignore malformed storage
+    }
+    const canvas = localStorage.getItem("skct-notepad-canvas");
+    if (!memo && !canvas) return;
+    setSnapshots((prev) => ({ ...prev, [questionNum]: { memo, canvas } }));
+  };
 
   const selectAnswer = (questionNum, choice) => {
     setAnswers((prev) => {
@@ -26,6 +43,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
       return { ...prev, [questionNum]: choice };
     });
     setGradingResult(null);
+    captureSnapshot(questionNum);
   };
 
   const submitGrading = () => {
@@ -124,7 +142,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
                     {wrongAnswers.map((w) => (
                       <div className="wrong-question-item" key={w.questionNum}>
                         <div className="question-info">
-                          <span className="question-number">{w.questionNum}번</span>
+                          <span className="question-number" onClick={() => setViewingSnapshot(w.questionNum)}>{w.questionNum}번</span>
                           <div className="answer-comparison">
                             <span className="user-answer">내 답: {w.userAnswer}</span>
                             <span className="arrow">→</span>
@@ -146,7 +164,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
               const inactive = activeRange && (num < activeRange.start || num > activeRange.end);
               return (
                 <div className={`omr-row ${inactive ? "inactive" : ""}`} key={num}>
-                  <div className="question-number">{num}</div>
+                  <div className="question-number" onClick={() => setViewingSnapshot(num)}>{num}</div>
                   <div className="choices">
                     {CHOICES.map((choice) => (
                       <button
@@ -169,6 +187,37 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
       <div className="omr-footer">
         <div className="answer-count">표시한 답안: {Object.keys(answers).length} / {QUESTION_COUNT}</div>
       </div>
+
+      {viewingSnapshot !== null && (
+        <div className="snapshot-overlay" onClick={() => setViewingSnapshot(null)}>
+          <div className="snapshot-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="snapshot-header">
+              <h3>{viewingSnapshot}번 문제 메모</h3>
+              <button className="close-btn" onClick={() => setViewingSnapshot(null)}>✕</button>
+            </div>
+            <div className="snapshot-body">
+              {snapshots[viewingSnapshot] ? (
+                <>
+                  <div className="snapshot-memo">
+                    <h4>메모</h4>
+                    <p>{snapshots[viewingSnapshot].memo || "(메모 없음)"}</p>
+                  </div>
+                  <div className="snapshot-drawing">
+                    <h4>그림판</h4>
+                    {snapshots[viewingSnapshot].canvas ? (
+                      <img src={snapshots[viewingSnapshot].canvas} alt={`${viewingSnapshot}번 그림`} />
+                    ) : (
+                      <p>(그림 없음)</p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <p>이 문제를 풀 때 저장된 메모/그림이 없습니다.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

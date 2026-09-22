@@ -92,6 +92,11 @@
   opacity: 0.4;
   cursor: default;
 }
+.zoom-slider {
+  width: 90px;
+  accent-color: #4a5568;
+  cursor: pointer;
+}
 .zoom-level {
   font-size: 13px;
   font-weight: 500;
@@ -264,6 +269,14 @@
   font-size: 14px;
   color: #333;
   text-align: center;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+}
+.question-number:hover {
+  background-color: #edf2f7;
+  color: #2d3748;
+  text-decoration: underline;
 }
 .choices {
   display: grid;
@@ -360,6 +373,43 @@
 .answer-comparison { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .correct-answer { color: #2f855a; font-weight: 600; }
 .user-answer { color: #c53030; }
+
+/* ---------- Question snapshot viewer ---------- */
+.snapshot-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10001;
+  padding: 20px;
+}
+.snapshot-modal {
+  background-color: #fff;
+  border-radius: 12px;
+  max-width: 480px;
+  max-height: 80vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+.snapshot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 2px solid #eee;
+  background-color: #fafafa;
+}
+.snapshot-header h3 { font-size: 16px; font-weight: 700; }
+.snapshot-header .close-btn { background: #edf2f7; color: #4a5568; }
+.snapshot-body { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.snapshot-memo h4, .snapshot-drawing h4 { font-size: 13px; color: #4a5568; margin-bottom: 6px; }
+.snapshot-memo p { font-size: 14px; color: #333; white-space: pre-wrap; word-break: break-word; }
+.snapshot-drawing img { max-width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; }
 
 /* ---------- right panel ---------- */
 .right-panel {
