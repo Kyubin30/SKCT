@@ -473,7 +473,10 @@
 }
 .timer-section { padding: 12px; min-height: 100px; }
 .notepad-section { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-.calculator-section { flex: 1; overflow: hidden; padding: 12px; display: flex; flex-direction: column; }
+/* Capped, not flex:1 - letting it grow with all leftover height (e.g. on a
+   tall/maximized window) blew the buttons up into oversized squares. Extra
+   space now goes to the notepad instead, which actually benefits from it. */
+.calculator-section { flex: 0 1 380px; overflow: hidden; padding: 12px; display: flex; flex-direction: column; }
 
 /* ---------- Timer ---------- */
 .timer {
