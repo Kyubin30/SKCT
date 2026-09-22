@@ -369,7 +369,7 @@
 }
 .timer-section { padding: 12px; min-height: 100px; }
 .notepad-section { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-.calculator-section { flex: 1; overflow: hidden; padding: 12px; display: flex; }
+.calculator-section { flex: 1; overflow: hidden; padding: 12px; display: flex; flex-direction: column; }
 
 /* ---------- Timer ---------- */
 .timer {
