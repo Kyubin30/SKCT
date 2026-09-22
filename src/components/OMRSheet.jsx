@@ -4,13 +4,20 @@ import { useLocalStorage } from "../hooks/useLocalStorage";
 const QUESTION_COUNT = 100;
 const CHOICES = [1, 2, 3, 4, 5];
 const QUESTION_NUMBERS = Array.from({ length: QUESTION_COUNT }, (_, i) => i + 1);
+const STATUS_FILTERS = [
+  { key: "all", label: "전체" },
+  { key: "correct", label: "정답" },
+  { key: "wrong", label: "오답" },
+  { key: "unanswered", label: "미답" },
+];
 
 export default function OMRSheet({ onGradingToggle, activeRange }) {
   const [answers, setAnswers] = useLocalStorage("skct-omr-answers", {});
   const [gradingInput, setGradingInput] = useState("");
   const [gradingResult, setGradingResult] = useState(null);
   const [gradingMode, setGradingMode] = useState(false);
-  const [wrongAnswers, setWrongAnswers] = useState([]);
+  const [questionStatuses, setQuestionStatuses] = useState([]);
+  const [statusFilter, setStatusFilter] = useState("all");
   const [snapshots, setSnapshots] = useLocalStorage("skct-question-snapshots", {});
   const [viewingSnapshot, setViewingSnapshot] = useState(null);
 
@@ -60,13 +67,19 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
       return;
     }
     let correct = 0;
-    const wrong = [];
-    key.forEach((correctAnswer, idx) => {
-      const questionNum = idx + 1;
-      if (answers[questionNum] === correctAnswer) correct++;
-      else wrong.push({ questionNum, userAnswer: answers[questionNum] || "미답", correctAnswer });
+    const statuses = key.map((correctAnswer, idx) => {
+      const num = idx + 1;
+      const userAnswer = answers[num];
+      let status;
+      if (userAnswer === undefined) status = "unanswered";
+      else if (userAnswer === correctAnswer) {
+        status = "correct";
+        correct++;
+      } else status = "wrong";
+      return { num, status, userAnswer: userAnswer ?? null, correctAnswer };
     });
-    setWrongAnswers(wrong);
+    setQuestionStatuses(statuses);
+    setStatusFilter("all");
     setGradingResult({ correct, total: key.length, percentage: ((correct / key.length) * 100).toFixed(1) });
   };
 
@@ -74,17 +87,21 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
     if (window.confirm("모든 답안을 지우시겠습니까?")) {
       setAnswers({});
       setGradingResult(null);
-      setWrongAnswers([]);
+      setQuestionStatuses([]);
     }
   };
 
   const clearGradingInput = () => {
     setGradingInput("");
     setGradingResult(null);
-    setWrongAnswers([]);
+    setQuestionStatuses([]);
   };
 
   const filterGradingKeydown = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.stopPropagation();
+      return;
+    }
     if (!/^[0-9]$/.test(e.key) && e.key !== "," && e.key !== " " && e.key !== "Backspace" && e.key !== "ArrowLeft" && e.key !== "ArrowRight") {
       e.preventDefault();
     }
@@ -135,23 +152,45 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
                 <div className="score-item">총 문항: {gradingResult.total}개</div>
                 <div className="score-item large">점수: {gradingResult.percentage}점</div>
               </div>
-              {wrongAnswers.length > 0 && (
-                <div className="wrong-questions-detail">
-                  <h4>틀린 문제 상세 ({wrongAnswers.length}개)</h4>
-                  <div className="wrong-questions-list">
-                    {wrongAnswers.map((w) => (
-                      <div className="wrong-question-item" key={w.questionNum}>
-                        <div className="question-info">
-                          <span className="question-number" onClick={() => setViewingSnapshot(w.questionNum)}>{w.questionNum}번</span>
-                          <div className="answer-comparison">
-                            <span className="user-answer">내 답: {w.userAnswer}</span>
-                            <span className="arrow">→</span>
-                            <span className="correct-answer">정답: {w.correctAnswer}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+              {questionStatuses.length > 0 && (
+                <div className="question-results">
+                  <div className="question-results-header">
+                    <h4>전체 문항 결과</h4>
+                    <div className="status-filter">
+                      {STATUS_FILTERS.map((f) => (
+                        <button
+                          key={f.key}
+                          className={statusFilter === f.key ? "active" : ""}
+                          onClick={() => setStatusFilter(f.key)}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
+                  <div className="question-results-list">
+                    {questionStatuses
+                      .filter((q) => statusFilter === "all" || q.status === statusFilter)
+                      .map((q) => (
+                        <div
+                          className={`question-result-item ${q.status}`}
+                          key={q.num}
+                          onClick={() => setViewingSnapshot(q.num)}
+                        >
+                          <span className="question-number">{q.num}번</span>
+                          {q.status === "unanswered" ? (
+                            <span className="result-label">미답 (정답 {q.correctAnswer})</span>
+                          ) : (
+                            <span className="result-label">
+                              내 답 {q.userAnswer}{q.status === "wrong" ? ` → 정답 ${q.correctAnswer}` : " (정답)"}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                  <button className="export-pdf-btn" onClick={() => window.print()} title="인쇄 대화상자에서 'PDF로 저장'을 선택하세요">
+                    오답노트 PDF로 저장
+                  </button>
                 </div>
               )}
             </div>
@@ -186,6 +225,43 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
 
       <div className="omr-footer">
         <div className="answer-count">표시한 답안: {Object.keys(answers).length} / {QUESTION_COUNT}</div>
+      </div>
+
+      {/* Hidden in normal view; @media print swaps this in place of the whole app (see App.css). */}
+      <div className="print-only wrong-answer-note">
+        <h1>오답노트</h1>
+        <section>
+          <h2>못 푼 문제</h2>
+          <p>
+            {questionStatuses.filter((q) => q.status === "unanswered").length > 0
+              ? questionStatuses.filter((q) => q.status === "unanswered").map((q) => q.num).join(", ")
+              : "없음"}
+          </p>
+        </section>
+        <section>
+          <h2>틀린 문제</h2>
+          {questionStatuses.filter((q) => q.status === "wrong").length === 0 && <p>없음</p>}
+          {questionStatuses
+            .filter((q) => q.status === "wrong")
+            .map((w) => {
+              const snap = snapshots[w.num];
+              return (
+                <div className="print-question-block" key={w.num}>
+                  <h3>{w.num}번 - 내 답 {w.userAnswer ?? "미답"} → 정답 {w.correctAnswer}</h3>
+                  <div className="print-memo">
+                    <strong>메모</strong>
+                    <p>{snap?.memo || "(메모 없음)"}</p>
+                  </div>
+                  {snap?.canvas && (
+                    <div className="print-drawing">
+                      <strong>그림판</strong>
+                      <img src={snap.canvas} alt={`${w.num}번 그림`} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </section>
       </div>
 
       {viewingSnapshot !== null && (

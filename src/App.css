@@ -360,19 +360,64 @@
 .score-display { display: flex; flex-direction: column; gap: 10px; }
 .score-item { font-size: 14px; color: #333; }
 .score-item.large { font-size: 20px; font-weight: 700; color: #2d3748; }
-.wrong-questions-detail {
+.question-results {
   margin-top: 15px;
   padding: 15px;
-  background-color: #fed7d7;
-  border: 1px solid #fc8181;
+  background-color: #f8f9fa;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
 }
-.wrong-questions-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
-.wrong-question-item { background: #fff; padding: 8px 10px; border-radius: 6px; }
-.question-info { display: flex; align-items: center; gap: 10px; }
-.answer-comparison { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.correct-answer { color: #2f855a; font-weight: 600; }
-.user-answer { color: #c53030; }
+.question-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.status-filter { display: flex; gap: 4px; }
+.status-filter button {
+  padding: 4px 10px;
+  border: 1px solid #e2e8f0;
+  background-color: #fff;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #4a5568;
+}
+.status-filter button.active { background-color: #4a5568; color: #fff; border-color: #4a5568; }
+.question-results-list { display: flex; flex-direction: column; gap: 6px; max-height: 300px; overflow-y: auto; }
+.question-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 4px solid transparent;
+  cursor: pointer;
+}
+.question-result-item .question-number { min-width: 45px; }
+.question-result-item .result-label { font-size: 13px; }
+.question-result-item.correct { border-left-color: #48bb78; }
+.question-result-item.correct .result-label { color: #2f855a; }
+.question-result-item.wrong { border-left-color: #f56565; background-color: #fff5f5; }
+.question-result-item.wrong .result-label { color: #c53030; }
+.question-result-item.unanswered { border-left-color: #ecc94b; background-color: #fffdf0; }
+.question-result-item.unanswered .result-label { color: #975a16; }
+.export-pdf-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  background-color: #2d3748;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.export-pdf-btn:hover { background-color: #1a202c; }
 
 /* ---------- Question snapshot viewer ---------- */
 .snapshot-overlay {
@@ -675,3 +720,29 @@
   .calc-buttons { gap: 5px; }
   .calc-buttons button { padding: 12px; font-size: 16px; }
 }
+
+/* ================= Print (오답노트 PDF) ================= */
+.print-only { display: none; }
+
+@media print {
+  body { background: #fff; }
+  body * { visibility: hidden; }
+  .print-only, .print-only * { visibility: visible; }
+  .print-only {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px;
+    background: #fff;
+    color: #1a202c;
+  }
+}
+
+.wrong-answer-note h1 { font-size: 22px; margin-bottom: 16px; }
+.wrong-answer-note h2 { font-size: 16px; margin: 20px 0 8px; }
+.wrong-answer-note h3 { font-size: 14px; margin-bottom: 6px; }
+.print-question-block { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #ddd; page-break-inside: avoid; }
+.print-memo p { white-space: pre-wrap; font-size: 13px; margin-bottom: 8px; }
+.print-drawing img { max-width: 100%; border: 1px solid #ddd; }
