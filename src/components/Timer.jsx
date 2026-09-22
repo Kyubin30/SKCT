@@ -57,9 +57,10 @@ export default function Timer({ onActiveRangeChange }) {
 
   useEffect(() => {
     if (!examMode || exam.finished) {
-      onActiveRangeChange?.(null);
+      onActiveRangeChange?.(null); // 제한 없음
     } else {
-      onActiveRangeChange?.(MOCK_SEGMENTS[exam.index].range);
+      const seg = MOCK_SEGMENTS[exam.index];
+      onActiveRangeChange?.(seg.range ?? { start: 1, end: 0 }); // 쉬는 시간: 전부 잠금
     }
   }, [examMode, exam.index, exam.finished, onActiveRangeChange]);
 

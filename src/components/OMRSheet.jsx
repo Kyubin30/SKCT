@@ -119,7 +119,11 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
           <button className="clear-all-btn" onClick={clearAll}>답안 초기화</button>
         </div>
         {activeRange && (
-          <p className="active-range-notice">현재 구간: {activeRange.start}~{activeRange.end}번만 마킹 가능</p>
+          <p className="active-range-notice">
+            {activeRange.start > activeRange.end
+              ? "쉬는 시간입니다. 마킹이 잠시 잠깁니다."
+              : `현재 구간: ${activeRange.start}~${activeRange.end}번만 마킹 가능`}
+          </p>
         )}
       </div>
 
