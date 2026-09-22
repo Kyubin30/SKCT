@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import PDFErrorBoundary from "./PDFErrorBoundary";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -97,26 +98,28 @@ export default function PDFViewer() {
         )}
         {file && (
           <div className={`pdf-document-container ${loading ? "loading" : "loaded"}`}>
-            <Document
-              file={file}
-              options={PDF_OPTIONS}
-              onLoadSuccess={onDocLoadSuccess}
-              onLoadProgress={onLoadProgress}
-              onLoadError={onLoadError}
-              className="pdf-document"
-            >
-              {Array.from(new Array(numPages || 0), (_, i) => (
-                <Page
-                  key={`page_${i + 1}`}
-                  pageNumber={i + 1}
-                  renderTextLayer
-                  renderAnnotationLayer
-                  scale={scale}
-                  className="pdf-page"
-                  onRenderSuccess={() => setRenderedPages((n) => n + 1)}
-                />
-              ))}
-            </Document>
+            <PDFErrorBoundary key={`${file.name}-${file.lastModified}-${file.size}`}>
+              <Document
+                file={file}
+                options={PDF_OPTIONS}
+                onLoadSuccess={onDocLoadSuccess}
+                onLoadProgress={onLoadProgress}
+                onLoadError={onLoadError}
+                className="pdf-document"
+              >
+                {Array.from(new Array(numPages || 0), (_, i) => (
+                  <Page
+                    key={`page_${i + 1}`}
+                    pageNumber={i + 1}
+                    renderTextLayer
+                    renderAnnotationLayer
+                    scale={scale}
+                    className="pdf-page"
+                    onRenderSuccess={() => setRenderedPages((n) => n + 1)}
+                  />
+                ))}
+              </Document>
+            </PDFErrorBoundary>
           </div>
         )}
         {!file && !loading && (
