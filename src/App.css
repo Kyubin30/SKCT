@@ -579,8 +579,8 @@
 }
 .calc-buttons {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(6, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(6, minmax(0, 1fr));
   gap: 4px;
   flex: 1;
   min-height: 0;
@@ -702,10 +702,13 @@
   }
   .narrow-screen .omr-panel { width: 100%; }
 
-  .calc-header { font-size: 14px; }
-  .calc-display { font-size: 28px; padding: 12px; min-height: 45px; }
-  .calc-buttons { gap: 6px; }
-  .calc-buttons button { padding: 15px; font-size: 18px; }
+  /* Only enlarge for the stacked (non-narrow) layout, which has room to grow -
+     narrow-screen's right-panel stays a fixed height here (scroll fallback
+     only kicks in at 480px), so bigger buttons would just overflow and clip. */
+  .app:not(.narrow-screen) .calc-header { font-size: 14px; }
+  .app:not(.narrow-screen) .calc-display { font-size: 28px; padding: 12px; min-height: 45px; }
+  .app:not(.narrow-screen) .calc-buttons { gap: 6px; }
+  .app:not(.narrow-screen) .calc-buttons button { padding: 15px; font-size: 18px; }
 }
 
 @media (max-width: 480px) {
