@@ -228,6 +228,7 @@
 .grade-btn:hover { background-color: #2d3748; }
 .clear-all-btn { background-color: #718096; }
 .clear-all-btn:hover { background-color: #4a5568; }
+.active-range-notice { margin-top: 8px; font-size: 12px; font-weight: 600; color: #2f855a; }
 
 .omr-content {
   flex: 1;
@@ -249,6 +250,8 @@
   border-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+.omr-row.inactive { opacity: 0.4; }
+.omr-row.inactive .choice-btn { cursor: not-allowed; }
 .question-number {
   min-width: 35px;
   font-weight: 700;
@@ -397,8 +400,8 @@
 .cancel-btn { background-color: #a0aec0; }
 .timer-display { display: flex; align-items: baseline; gap: 5px; font-size: 22px; font-weight: 700; }
 .total-time { font-size: 14px; color: #999; font-weight: 400; }
-.exam-display { flex-direction: column; align-items: center; gap: 2px; border-radius: 6px; animation: section-flash 0.8s ease-out; }
-.section-label { font-size: 13px; font-weight: 700; }
+.exam-flash { border-radius: 6px; animation: section-flash 0.8s ease-out; }
+.section-label { font-weight: 700; }
 .section-label.exam { color: #2f855a; }
 .section-label.break { color: #c05621; }
 @keyframes section-flash {
@@ -476,7 +479,7 @@
 .calc-buttons {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  grid-template-rows: repeat(5, 1fr);
+  grid-template-rows: repeat(6, 1fr);
   gap: 4px;
   flex: 1;
   min-height: 0;

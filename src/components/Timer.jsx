@@ -5,11 +5,13 @@ const PRESETS = [75, 100];
 const MOCK_SECTION_NAMES = ["언어이해", "자료해석", "창의수리", "언어추리", "수열"];
 const MOCK_SECTION_SECONDS = 15 * 60;
 const MOCK_BREAK_SECONDS = 60;
+const QUESTIONS_PER_SECTION = 20; // 5 sections x 20 = 100 questions total
 
 // exam segment, break segment, exam segment, break segment, ... (no trailing break)
 const MOCK_SEGMENTS = MOCK_SECTION_NAMES.flatMap((name, i) => {
-  const segs = [{ type: "exam", label: name, duration: MOCK_SECTION_SECONDS }];
-  if (i < MOCK_SECTION_NAMES.length - 1) segs.push({ type: "break", label: "쉬는 시간", duration: MOCK_BREAK_SECONDS });
+  const range = { start: i * QUESTIONS_PER_SECTION + 1, end: (i + 1) * QUESTIONS_PER_SECTION };
+  const segs = [{ type: "exam", label: name, duration: MOCK_SECTION_SECONDS, range }];
+  if (i < MOCK_SECTION_NAMES.length - 1) segs.push({ type: "break", label: "쉬는 시간", duration: MOCK_BREAK_SECONDS, range: null });
   return segs;
 });
 
@@ -19,7 +21,7 @@ function formatTime(totalSeconds) {
   return `${String(m).padStart(2, "0")}분 ${String(s).padStart(2, "0")}초`;
 }
 
-export default function Timer() {
+export default function Timer({ onActiveRangeChange }) {
   const [totalMinutes, setTotalMinutes] = useState(75);
   const [customMinutes, setCustomMinutes] = useState(0);
   const [customSeconds, setCustomSeconds] = useState(0);
@@ -52,6 +54,14 @@ export default function Timer() {
   useEffect(() => {
     if (exam.finished) setRunning(false);
   }, [exam.finished]);
+
+  useEffect(() => {
+    if (!examMode || exam.finished) {
+      onActiveRangeChange?.(null);
+    } else {
+      onActiveRangeChange?.(MOCK_SEGMENTS[exam.index].range);
+    }
+  }, [examMode, exam.index, exam.finished, onActiveRangeChange]);
 
   const toggleRun = () => {
     if (examMode && exam.finished) return;
@@ -132,13 +142,13 @@ export default function Timer() {
       </div>
 
       {examMode ? (
-        <div className="timer-display exam-display" key={exam.index}>
+        <div className="timer-display exam-flash" key={exam.index}>
           {exam.finished ? (
             <span className="current-time">모의고사 종료</span>
           ) : (
             <>
-              <span className={`section-label ${currentSegment.type}`}>{currentSegment.label}</span>
               <span className="current-time">{formatTime(exam.remaining)}</span>
+              <span className={`total-time section-label ${currentSegment.type}`}>{currentSegment.label}</span>
             </>
           )}
         </div>

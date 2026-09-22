@@ -10,6 +10,7 @@ import "./App.css";
 export default function App() {
   const tutorialRef = useRef();
   const [gradingMode, setGradingMode] = useState(false);
+  const [activeRange, setActiveRange] = useState(null);
   const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 768px)").matches);
 
   useEffect(() => {
@@ -31,13 +32,13 @@ export default function App() {
 
         <div className="omr-container">
           <div className={`omr-panel ${gradingMode ? "grading-mode" : ""}`}>
-            <OMRSheet onGradingToggle={setGradingMode} />
+            <OMRSheet onGradingToggle={setGradingMode} activeRange={activeRange} />
           </div>
         </div>
 
         <div className={`right-panel ${narrow ? "expanded" : ""}`}>
           <div className="timer-section">
-            <Timer />
+            <Timer onActiveRangeChange={setActiveRange} />
           </div>
           <div className="notepad-section">
             <NotePad />

@@ -5,7 +5,7 @@ const QUESTION_COUNT = 100;
 const CHOICES = [1, 2, 3, 4, 5];
 const QUESTION_NUMBERS = Array.from({ length: QUESTION_COUNT }, (_, i) => i + 1);
 
-export default function OMRSheet({ onGradingToggle }) {
+export default function OMRSheet({ onGradingToggle, activeRange }) {
   const [answers, setAnswers] = useLocalStorage("skct-omr-answers", {});
   const [gradingInput, setGradingInput] = useState("");
   const [gradingResult, setGradingResult] = useState(null);
@@ -83,6 +83,9 @@ export default function OMRSheet({ onGradingToggle }) {
           </button>
           <button className="clear-all-btn" onClick={clearAll}>답안 초기화</button>
         </div>
+        {activeRange && (
+          <p className="active-range-notice">현재 구간: {activeRange.start}~{activeRange.end}번만 마킹 가능</p>
+        )}
       </div>
 
       {gradingMode ? (
@@ -139,22 +142,26 @@ export default function OMRSheet({ onGradingToggle }) {
       ) : (
         <div className="omr-content">
           <div className="omr-grid">
-            {QUESTION_NUMBERS.map((num) => (
-              <div className="omr-row" key={num}>
-                <div className="question-number">{num}</div>
-                <div className="choices">
-                  {CHOICES.map((choice) => (
-                    <button
-                      key={choice}
-                      className={`choice-btn ${answers[num] === choice ? "selected" : ""}`}
-                      onClick={() => selectAnswer(num, choice)}
-                    >
-                      {choice}
-                    </button>
-                  ))}
+            {QUESTION_NUMBERS.map((num) => {
+              const inactive = activeRange && (num < activeRange.start || num > activeRange.end);
+              return (
+                <div className={`omr-row ${inactive ? "inactive" : ""}`} key={num}>
+                  <div className="question-number">{num}</div>
+                  <div className="choices">
+                    {CHOICES.map((choice) => (
+                      <button
+                        key={choice}
+                        className={`choice-btn ${answers[num] === choice ? "selected" : ""}`}
+                        onClick={() => selectAnswer(num, choice)}
+                        disabled={inactive}
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
