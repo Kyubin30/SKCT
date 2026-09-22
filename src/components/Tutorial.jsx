@@ -1,18 +1,11 @@
-import { forwardRef, useState, useEffect, useImperativeHandle } from "react";
+import { forwardRef, useState, useImperativeHandle } from "react";
 
 const Tutorial = forwardRef((_, ref) => {
   const [visible, setVisible] = useState(false);
 
-  useEffect(() => {
-    if (!localStorage.getItem("hasSeenTutorial")) setVisible(true);
-  }, []);
-
   useImperativeHandle(ref, () => ({ open: () => setVisible(true) }));
 
-  const dismiss = () => {
-    localStorage.setItem("hasSeenTutorial", "true");
-    setVisible(false);
-  };
+  const dismiss = () => setVisible(false);
 
   if (!visible) return null;
 

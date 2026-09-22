@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import Tutorial from "./components/Tutorial";
-import LayoutNotification from "./components/LayoutNotification";
 import PDFViewer from "./components/PDFViewer";
 import OMRSheet from "./components/OMRSheet";
 import Timer from "./components/Timer";
@@ -9,7 +8,6 @@ import Calculator from "./components/Calculator";
 import "./App.css";
 
 export default function App() {
-  const [omrVisible, setOmrVisible] = useState(true);
   const tutorialRef = useRef();
   const [gradingMode, setGradingMode] = useState(false);
   const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 768px)").matches);
@@ -24,7 +22,6 @@ export default function App() {
   return (
     <>
       <Tutorial ref={tutorialRef} />
-      <LayoutNotification />
       <div className={`app ${narrow ? "narrow-screen" : ""}`}>
         <button className="help-btn" onClick={() => tutorialRef.current?.open()} title="사용 설명서 보기">❓</button>
 
@@ -33,14 +30,9 @@ export default function App() {
         </div>
 
         <div className="omr-container">
-          {omrVisible && (
-            <div className={`omr-panel ${gradingMode ? "grading-mode" : ""}`}>
-              <OMRSheet onGradingToggle={setGradingMode} />
-            </div>
-          )}
-          <button className="omr-toggle-btn" onClick={() => setOmrVisible((v) => !v)}>
-            {omrVisible ? "▼ OMR 숨기기" : "OMR 보이기 ▲"}
-          </button>
+          <div className={`omr-panel ${gradingMode ? "grading-mode" : ""}`}>
+            <OMRSheet onGradingToggle={setGradingMode} />
+          </div>
         </div>
 
         <div className={`right-panel ${narrow ? "expanded" : ""}`}>

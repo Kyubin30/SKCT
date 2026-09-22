@@ -1,32 +1,69 @@
 import { useState, useEffect } from "react";
 
-const PRESETS = [5, 15, 100];
+const PRESETS = [75, 100];
 
-function formatElapsed(totalSeconds) {
+const MOCK_SECTION_NAMES = ["언어이해", "자료해석", "창의수리", "언어추리", "수열"];
+const MOCK_SECTION_SECONDS = 15 * 60;
+const MOCK_BREAK_SECONDS = 60;
+
+// exam segment, break segment, exam segment, break segment, ... (no trailing break)
+const MOCK_SEGMENTS = MOCK_SECTION_NAMES.flatMap((name, i) => {
+  const segs = [{ type: "exam", label: name, duration: MOCK_SECTION_SECONDS }];
+  if (i < MOCK_SECTION_NAMES.length - 1) segs.push({ type: "break", label: "쉬는 시간", duration: MOCK_BREAK_SECONDS });
+  return segs;
+});
+
+function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return `${String(m).padStart(2, "0")}분 ${String(s).padStart(2, "0")}초`;
 }
 
 export default function Timer() {
-  const [totalMinutes, setTotalMinutes] = useState(100);
+  const [totalMinutes, setTotalMinutes] = useState(75);
   const [customMinutes, setCustomMinutes] = useState(0);
   const [customSeconds, setCustomSeconds] = useState(0);
   const [customMode, setCustomMode] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
 
+  const [examMode, setExamMode] = useState(false);
+  const [exam, setExam] = useState({ index: 0, remaining: MOCK_SEGMENTS[0].duration, finished: false });
+
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => setElapsed((e) => e + 1), 1000);
+    const id = setInterval(() => {
+      if (examMode) {
+        setExam((prev) => {
+          if (prev.finished) return prev;
+          if (prev.remaining > 1) return { ...prev, remaining: prev.remaining - 1 };
+          const nextIndex = prev.index + 1;
+          return nextIndex < MOCK_SEGMENTS.length
+            ? { index: nextIndex, remaining: MOCK_SEGMENTS[nextIndex].duration, finished: false }
+            : { ...prev, remaining: 0, finished: true };
+        });
+      } else {
+        setElapsed((e) => e + 1);
+      }
+    }, 1000);
     return () => clearInterval(id);
-  }, [running]);
+  }, [running, examMode]);
 
-  const toggleRun = () => setRunning((r) => !r);
+  useEffect(() => {
+    if (exam.finished) setRunning(false);
+  }, [exam.finished]);
+
+  const toggleRun = () => {
+    if (examMode && exam.finished) return;
+    setRunning((r) => !r);
+  };
+
   const reset = () => {
     setRunning(false);
-    setElapsed(0);
+    if (examMode) setExam({ index: 0, remaining: MOCK_SEGMENTS[0].duration, finished: false });
+    else setElapsed(0);
   };
+
   const applyCustom = () => {
     const totalSeconds = customMinutes * 60 + customSeconds;
     if (totalSeconds > 0) {
@@ -35,7 +72,17 @@ export default function Timer() {
       setCustomMode(false);
     }
   };
+
+  const selectMode = (value) => {
+    setRunning(false);
+    setExamMode(value === "mockExam");
+    setCustomMode(value === "custom");
+    if (value === "mockExam") setExam({ index: 0, remaining: MOCK_SEGMENTS[0].duration, finished: false });
+    else if (value !== "custom") setTotalMinutes(Number(value));
+  };
+
   const totalLabel = customMode ? `${customMinutes}분 ${customSeconds}초` : `${totalMinutes}분`;
+  const currentSegment = MOCK_SEGMENTS[exam.index];
 
   return (
     <div className="timer" onKeyDown={(e) => e.stopPropagation()}>
@@ -72,20 +119,36 @@ export default function Timer() {
         ) : (
           <select
             className="time-select"
-            value={totalMinutes}
-            onChange={(e) => (e.target.value === "custom" ? setCustomMode(true) : setTotalMinutes(Number(e.target.value)))}
+            value={examMode ? "mockExam" : totalMinutes}
+            onChange={(e) => selectMode(e.target.value)}
           >
             {PRESETS.map((m) => (
               <option key={m} value={m}>{m}분</option>
             ))}
             <option value="custom">사용자 지정</option>
+            <option value="mockExam">모의고사 모드</option>
           </select>
         )}
       </div>
-      <div className="timer-display">
-        <span className="current-time">{formatElapsed(elapsed)}</span>
-        <span className="total-time">/ {totalLabel}</span>
-      </div>
+
+      {examMode ? (
+        <div className="timer-display exam-display" key={exam.index}>
+          {exam.finished ? (
+            <span className="current-time">모의고사 종료</span>
+          ) : (
+            <>
+              <span className={`section-label ${currentSegment.type}`}>{currentSegment.label}</span>
+              <span className="current-time">{formatTime(exam.remaining)}</span>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="timer-display">
+          <span className="current-time">{formatTime(elapsed)}</span>
+          <span className="total-time">/ {totalLabel}</span>
+        </div>
+      )}
+
       <div className="timer-buttons">
         <button className={`timer-btn ${running ? "stop-btn" : "start-btn"}`} onClick={toggleRun}>
           {running ? "정지" : "시작"}
