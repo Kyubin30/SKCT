@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import PDFErrorBoundary from "./PDFErrorBoundary";
@@ -19,18 +19,54 @@ const PDF_OPTIONS = {
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 2;
 const SCALE_STEP = 0.1;
+const PLACEHOLDER_WIDTH = 600; // approx A4 portrait at scale 1, just for a stable pre-render slot size
+const PLACEHOLDER_HEIGHT = 848;
+
+// Mounting every page of a long exam PDF (500+) at once is what was hanging the
+// viewer. Each page instead sits behind an IntersectionObserver and only mounts
+// (and pulls its bytes/render work) once it scrolls near the viewport, so pages
+// keep appearing as the user scrolls instead of blocking on the whole document.
+function LazyPage({ pageNumber, scale }) {
+  const [visible, setVisible] = useState(false);
+  const slotRef = useRef(null);
+
+  useEffect(() => {
+    if (visible) return;
+    const el = slotRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "800px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  return (
+    <div ref={slotRef} className="pdf-page-slot">
+      {visible ? (
+        <Page pageNumber={pageNumber} renderTextLayer renderAnnotationLayer scale={scale} className="pdf-page" />
+      ) : (
+        <div
+          className="pdf-page-placeholder"
+          style={{ width: PLACEHOLDER_WIDTH * scale, height: PLACEHOLDER_HEIGHT * scale }}
+        />
+      )}
+    </div>
+  );
+}
 
 export default function PDFViewer() {
   const [file, setFile] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
-  const [renderedPages, setRenderedPages] = useState(0);
   const [scale, setScale] = useState(1);
-
-  useEffect(() => {
-    if (numPages && renderedPages === numPages) setLoading(false);
-  }, [renderedPages, numPages]);
 
   const onFileChange = (e) => {
     const f = e.target.files[0];
@@ -42,13 +78,12 @@ export default function PDFViewer() {
     setNumPages(null);
     setScale(1);
     setLoading(true);
-    setRenderedPages(0);
     setLoadProgress(0);
   };
 
   const onDocLoadSuccess = ({ numPages: n }) => {
     setNumPages(n);
-    if (n === 0) setLoading(false);
+    setLoading(false);
   };
 
   const onLoadProgress = ({ loaded, total }) => {
@@ -63,8 +98,6 @@ export default function PDFViewer() {
 
   const setZoom = (v) => {
     if (!file) return;
-    setLoading(true);
-    setRenderedPages(0);
     setScale(Math.min(MAX_SCALE, Math.max(MIN_SCALE, v)));
   };
 
@@ -89,38 +122,24 @@ export default function PDFViewer() {
         {loading && (
           <div className="loading-overlay">
             <div className="spinner" />
-            {loadProgress < 100 ? (
-              <p>PDF 파일을 불러오는 중입니다... {loadProgress}%</p>
-            ) : (
-              <p>페이지를 표시하는 중입니다... ({renderedPages}/{numPages})</p>
-            )}
+            <p>PDF 파일을 불러오는 중입니다... {loadProgress}%</p>
           </div>
         )}
         {file && (
-          <div className={`pdf-document-container ${loading ? "loading" : "loaded"}`}>
-            <PDFErrorBoundary key={`${file.name}-${file.lastModified}-${file.size}`}>
-              <Document
-                file={file}
-                options={PDF_OPTIONS}
-                onLoadSuccess={onDocLoadSuccess}
-                onLoadProgress={onLoadProgress}
-                onLoadError={onLoadError}
-                className="pdf-document"
-              >
-                {Array.from(new Array(numPages || 0), (_, i) => (
-                  <Page
-                    key={`page_${i + 1}`}
-                    pageNumber={i + 1}
-                    renderTextLayer
-                    renderAnnotationLayer
-                    scale={scale}
-                    className="pdf-page"
-                    onRenderSuccess={() => setRenderedPages((n) => n + 1)}
-                  />
-                ))}
-              </Document>
-            </PDFErrorBoundary>
-          </div>
+          <PDFErrorBoundary key={`${file.name}-${file.lastModified}-${file.size}`}>
+            <Document
+              file={file}
+              options={PDF_OPTIONS}
+              onLoadSuccess={onDocLoadSuccess}
+              onLoadProgress={onLoadProgress}
+              onLoadError={onLoadError}
+              className="pdf-document"
+            >
+              {Array.from(new Array(numPages || 0), (_, i) => (
+                <LazyPage key={`page_${i + 1}`} pageNumber={i + 1} scale={scale} />
+              ))}
+            </Document>
+          </PDFErrorBoundary>
         )}
         {!file && !loading && (
           <div className="pdf-placeholder">

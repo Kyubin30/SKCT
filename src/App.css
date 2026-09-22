@@ -141,6 +141,12 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border-radius: 4px;
 }
+.pdf-page-slot { display: flex; justify-content: center; }
+.pdf-page-placeholder {
+  margin-bottom: 20px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+}
 .pdf-placeholder {
   display: flex;
   align-items: center;
