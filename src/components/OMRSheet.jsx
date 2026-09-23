@@ -185,7 +185,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
           <p className="active-range-notice">
             {activeRange.start > activeRange.end
               ? "쉬는 시간입니다. 마킹이 잠시 잠깁니다."
-              : `현재 구간: ${activeRange.start}~${activeRange.end}번만 마킹 가능`}
+              : `현재 영역: ${AREAS.find((a) => a.start === activeRange.start && a.end === activeRange.end)?.name ?? `${activeRange.start}~${activeRange.end}번`}`}
           </p>
         )}
       </div>
