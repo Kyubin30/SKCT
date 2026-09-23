@@ -50,7 +50,7 @@ function LazyPage({ pageNumber, scale }) {
   }, [visible]);
 
   return (
-    <div ref={slotRef} className="pdf-page-slot">
+    <div ref={slotRef} id={`pdf-page-${pageNumber}`} className="pdf-page-slot">
       {visible ? (
         <Page pageNumber={pageNumber} renderTextLayer renderAnnotationLayer scale={scale} className="pdf-page" />
       ) : (
@@ -69,6 +69,7 @@ export default function PDFViewer() {
   const [loading, setLoading] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [scale, setScale] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const onFileChange = (e) => {
     const f = e.target.files[0];
@@ -81,7 +82,44 @@ export default function PDFViewer() {
     setScale(1);
     setLoading(true);
     setLoadProgress(0);
+    setCurrentPage(1);
   };
+
+  // Jumps to a page by scrolling it into view - the continuous scroll stays
+  // usable as before, this is just a shortcut on top of it.
+  const goToPage = (n) => {
+    const clamped = Math.min(Math.max(n, 1), numPages || 1);
+    setCurrentPage(clamped);
+    document.getElementById(`pdf-page-${clamped}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Keeps the page indicator in sync with manual scrolling too. A single
+  // IntersectionObserver watching all page slots (not a scroll listener doing
+  // getBoundingClientRect on every pixel) - the browser only invokes the
+  // callback when a page crosses the tracking band below, so cost stays flat
+  // regardless of how many hundreds of pages the document has.
+  useEffect(() => {
+    if (!numPages) return;
+    const container = document.querySelector(".pdf-content");
+    const slots = container?.querySelectorAll(".pdf-page-slot");
+    if (!container || !slots || slots.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const intersecting = entries.filter((entry) => entry.isIntersecting);
+        if (intersecting.length === 0) return;
+        const topmost = intersecting.reduce((a, b) => (a.boundingClientRect.top < b.boundingClientRect.top ? a : b));
+        const num = Number(topmost.target.id.slice("pdf-page-".length));
+        if (num) setCurrentPage(num);
+      },
+      // Only counts a page as "current" while its top is within the upper 30%
+      // of the scroll area, so the callback fires only on that crossing, not
+      // continuously while scrolling.
+      { root: container, rootMargin: "0px 0px -70% 0px", threshold: 0 }
+    );
+    slots.forEach((slot) => observer.observe(slot));
+    return () => observer.disconnect();
+  }, [numPages]);
 
   const onDocLoadSuccess = ({ numPages: n }) => {
     setNumPages(n);
@@ -123,6 +161,11 @@ export default function PDFViewer() {
               <span className="zoom-level">{Math.round(scale * 100)}%</span>
               <button className="zoom-btn" onClick={() => setZoom(scale + SCALE_STEP)} disabled={scale >= MAX_SCALE}>+</button>
               <button className="zoom-reset" onClick={() => setZoom(1)}>초기화</button>
+            </div>
+            <div className="page-nav-controls">
+              <button className="page-nav-btn" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>‹</button>
+              <span className="page-nav-label">{currentPage} / {numPages || 1}</span>
+              <button className="page-nav-btn" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= (numPages || 1)}>›</button>
             </div>
           </div>
         )}
