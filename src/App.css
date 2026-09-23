@@ -73,6 +73,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 54px;
   background-color: #fff;
   padding: 6px 12px;
   border-radius: 6px;
@@ -107,6 +108,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 54px;
   background-color: #fff;
   padding: 6px 12px;
   border-radius: 6px;

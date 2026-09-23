@@ -86,40 +86,71 @@ export default function PDFViewer() {
   };
 
   // Jumps to a page by scrolling it into view - the continuous scroll stays
-  // usable as before, this is just a shortcut on top of it.
+  // usable as before, this is just a shortcut on top of it. The page indicator
+  // is kept correct by the tracking effect below regardless, so this doesn't
+  // need to land pixel-perfect.
   const goToPage = (n) => {
     const clamped = Math.min(Math.max(n, 1), numPages || 1);
     setCurrentPage(clamped);
     document.getElementById(`pdf-page-${clamped}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Keeps the page indicator in sync with manual scrolling too. A single
-  // IntersectionObserver watching all page slots (not a scroll listener doing
-  // getBoundingClientRect on every pixel) - the browser only invokes the
-  // callback when a page crosses the tracking band below, so cost stays flat
-  // regardless of how many hundreds of pages the document has.
+  // Keeps the page indicator in sync with manual scrolling too (and corrects
+  // goToPage's guess once layout settles). A single IntersectionObserver
+  // watching all page slots as the trigger - not a scroll listener doing
+  // getBoundingClientRect on every pixel - so cost stays flat regardless of how
+  // many hundreds of pages the document has. On every firing it re-derives
+  // "current page" from the slots' live positions rather than trusting which
+  // entries changed: a placeholder converting to its real rendered height
+  // reflows the document, and relying only on enter/exit deltas can get stuck
+  // on a stale page if the correct one never re-fires (it was already
+  // intersecting and simply stays that way).
   useEffect(() => {
     if (!numPages) return;
     const container = document.querySelector(".pdf-content");
-    const slots = container?.querySelectorAll(".pdf-page-slot");
-    if (!container || !slots || slots.length === 0) return;
+    const slots = container ? [...container.querySelectorAll(".pdf-page-slot")] : [];
+    if (!container || slots.length === 0) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const intersecting = entries.filter((entry) => entry.isIntersecting);
-        if (intersecting.length === 0) return;
-        const topmost = intersecting.reduce((a, b) => (a.boundingClientRect.top < b.boundingClientRect.top ? a : b));
-        const num = Number(topmost.target.id.slice("pdf-page-".length));
-        if (num) setCurrentPage(num);
-      },
-      // Only counts a page as "current" while its top is within the upper 30%
-      // of the scroll area, so the callback fires only on that crossing, not
-      // continuously while scrolling.
-      { root: container, rootMargin: "0px 0px -70% 0px", threshold: 0 }
-    );
+    const bandHeight = container.clientHeight * 0.3;
+    const updateCurrentPage = () => {
+      const containerTop = container.getBoundingClientRect().top;
+      let best = null;
+      for (const slot of slots) {
+        const top = slot.getBoundingClientRect().top - containerTop;
+        if (top <= bandHeight && (best === null || top > best.top)) best = { top, id: slot.id };
+      }
+      if (!best) return;
+      const num = Number(best.id.slice("pdf-page-".length));
+      if (num) setCurrentPage(num);
+    };
+
+    const observer = new IntersectionObserver(updateCurrentPage, {
+      root: container,
+      rootMargin: "0px 0px -70% 0px",
+      threshold: 0,
+    });
     slots.forEach((slot) => observer.observe(slot));
     return () => observer.disconnect();
   }, [numPages]);
+
+  // Arrow-key page navigation. Other components that own keyboard input
+  // (NotePad, the OMR grading textarea, all of Timer) already stopPropagation
+  // on their own keydown handlers, so typing/adjusting values there never
+  // bubbles up to this listener.
+  useEffect(() => {
+    if (!file) return;
+    const onKeyDown = (e) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        e.preventDefault();
+        goToPage(currentPage + 1);
+      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        goToPage(currentPage - 1);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [file, currentPage, numPages]);
 
   const onDocLoadSuccess = ({ numPages: n }) => {
     setNumPages(n);
