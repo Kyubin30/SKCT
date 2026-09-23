@@ -121,9 +121,13 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
     e.stopPropagation();
   };
 
-  const renderResultItem = (q) => (
+  // In area view every area displays its own questions as 1~20 (not the global
+  // number) - the underlying num (answers/snapshots/grading key) stays global.
+  const toLocalNum = (globalNum, area) => globalNum - area.start + 1;
+
+  const renderResultItem = (q, label = q.num) => (
     <div className={`question-result-item ${q.status}`} key={q.num} onClick={() => setViewingSnapshot(q.num)}>
-      <span className="question-number">{q.num}번</span>
+      <span className="question-number">{label}번</span>
       {q.status === "unanswered" ? (
         <span className="result-label">미답 (정답 {q.correctAnswer})</span>
       ) : (
@@ -134,11 +138,11 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
     </div>
   );
 
-  const renderRow = (num) => {
+  const renderRow = (num, label = num) => {
     const inactive = activeRange && (num < activeRange.start || num > activeRange.end);
     return (
       <div className={`omr-row ${inactive ? "inactive" : ""}`} key={num}>
-        <div className="question-number" onClick={() => setViewingSnapshot(num)}>{num}</div>
+        <div className="question-number" onClick={() => setViewingSnapshot(num)}>{label}</div>
         <div className="choices">
           {CHOICES.map((choice) => (
             <button
@@ -158,7 +162,19 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
   return (
     <div className="omr-sheet">
       <div className="omr-header">
-        <h2>OMR 답안지</h2>
+        <div className="omr-header-top">
+          <h2>OMR 답안지</h2>
+          <div className="view-mode-toggle">
+            <label>
+              <input type="radio" name="viewMode" checked={viewMode === "area"} onChange={() => setViewMode("area")} />
+              영역별 번호
+            </label>
+            <label>
+              <input type="radio" name="viewMode" checked={viewMode === "all"} onChange={() => setViewMode("all")} />
+              전체 번호
+            </label>
+          </div>
+        </div>
         <div className="omr-actions">
           <button className="grade-btn" onClick={() => setGradingMode((m) => !m)}>
             {gradingMode ? "답안지 보기" : "채점하기"}
@@ -172,16 +188,6 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
               : `현재 구간: ${activeRange.start}~${activeRange.end}번만 마킹 가능`}
           </p>
         )}
-        <div className="view-mode-toggle">
-          <label>
-            <input type="radio" name="viewMode" checked={viewMode === "area"} onChange={() => setViewMode("area")} />
-            영역별 번호
-          </label>
-          <label>
-            <input type="radio" name="viewMode" checked={viewMode === "all"} onChange={() => setViewMode("all")} />
-            전체 번호
-          </label>
-        </div>
       </div>
 
       {gradingMode ? (
@@ -237,8 +243,8 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
                         .filter((g) => g.items.length > 0)
                         .map((g) => (
                           <div className="omr-area" key={g.area.name}>
-                            <h4 className="omr-area-title">{g.area.name} ({g.area.start}~{g.area.end}번)</h4>
-                            {g.items.map(renderResultItem)}
+                            <h4 className="omr-area-title">{g.area.name}</h4>
+                            {g.items.map((q) => renderResultItem(q, toLocalNum(q.num, g.area)))}
                           </div>
                         ));
                     })()}
@@ -256,9 +262,9 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
           {viewMode === "area" ? (
             AREAS.map((area) => (
               <div className="omr-area" key={area.name}>
-                <h3 className="omr-area-title">{area.name} ({area.start}~{area.end}번)</h3>
+                <h3 className="omr-area-title">{area.name}</h3>
                 <div className="omr-grid">
-                  {QUESTION_NUMBERS.slice(area.start - 1, area.end).map(renderRow)}
+                  {QUESTION_NUMBERS.slice(area.start - 1, area.end).map((num) => renderRow(num, toLocalNum(num, area)))}
                 </div>
               </div>
             ))
@@ -279,7 +285,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
           <h2>못 푼 문제</h2>
           {groupByArea(questionStatuses.filter((q) => q.status === "unanswered")).map((g) => (
             <p key={g.area.name}>
-              <strong>{g.area.name}:</strong> {g.items.length > 0 ? g.items.map((q) => q.num).join(", ") : "없음"}
+              <strong>{g.area.name}:</strong> {g.items.length > 0 ? g.items.map((q) => toLocalNum(q.num, g.area)).join(", ") : "없음"}
             </p>
           ))}
         </section>
@@ -293,7 +299,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
                   const snap = snapshots[w.num];
                   return (
                     <div className="print-question-block" key={w.num}>
-                      <h3>{w.num}번 - 내 답 {w.userAnswer ?? "미답"} → 정답 {w.correctAnswer}</h3>
+                      <h3>{toLocalNum(w.num, g.area)}번 - 내 답 {w.userAnswer ?? "미답"} → 정답 {w.correctAnswer}</h3>
                       <div className="print-memo">
                         <strong>메모</strong>
                         <p>{snap?.memo || "(메모 없음)"}</p>
@@ -318,7 +324,13 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
         <div className="snapshot-overlay" onClick={() => setViewingSnapshot(null)}>
           <div className="snapshot-modal" onClick={(e) => e.stopPropagation()}>
             <div className="snapshot-header">
-              <h3>{viewingSnapshot}번 문제 메모</h3>
+              <h3>
+                {(() => {
+                  if (viewMode !== "area") return `${viewingSnapshot}번`;
+                  const area = AREAS.find((a) => viewingSnapshot >= a.start && viewingSnapshot <= a.end);
+                  return area ? `${area.name} ${toLocalNum(viewingSnapshot, area)}번` : `${viewingSnapshot}번`;
+                })()} 문제 메모
+              </h3>
               <button className="close-btn" onClick={() => setViewingSnapshot(null)}>✕</button>
             </div>
             <div className="snapshot-body">
