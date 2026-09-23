@@ -257,6 +257,9 @@
 .omr-area { margin-bottom: 18px; }
 .omr-area:last-child { margin-bottom: 0; }
 .omr-area-title {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   font-size: 13px;
   font-weight: 700;
   color: #4a5568;
@@ -264,6 +267,8 @@
   padding-bottom: 6px;
   border-bottom: 1px solid #e2e8f0;
 }
+.omr-content .omr-area-title { background-color: #fff; }
+.question-results-list .omr-area-title { background-color: #f8f9fa; }
 .omr-grid {
   display: flex;
   flex-direction: column;
@@ -413,6 +418,7 @@
   border-radius: 6px;
   border-left: 4px solid transparent;
   cursor: pointer;
+  margin-bottom: 2px;
 }
 .question-result-item .question-number { min-width: 45px; }
 .question-result-item .result-label { font-size: 13px; }

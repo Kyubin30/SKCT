@@ -238,7 +238,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
                   <div className="question-results-list">
                     {(() => {
                       const filtered = questionStatuses.filter((q) => statusFilter === "all" || q.status === statusFilter);
-                      if (viewMode !== "area") return filtered.map(renderResultItem);
+                      if (viewMode !== "area") return filtered.map((q) => renderResultItem(q));
                       return groupByArea(filtered)
                         .filter((g) => g.items.length > 0)
                         .map((g) => (
@@ -269,7 +269,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
               </div>
             ))
           ) : (
-            <div className="omr-grid">{QUESTION_NUMBERS.map(renderRow)}</div>
+            <div className="omr-grid">{QUESTION_NUMBERS.map((num) => renderRow(num))}</div>
           )}
         </div>
       )}
