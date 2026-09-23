@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import { AREAS } from "../areas";
 
 const QUESTION_COUNT = 100;
 const CHOICES = [1, 2, 3, 4, 5];
@@ -11,6 +12,17 @@ const STATUS_FILTERS = [
   { key: "unanswered", label: "미답" },
 ];
 
+// Buckets items (each with a `.num`) into one array per AREA, in AREA order.
+function groupByArea(items, getNum = (item) => item.num) {
+  return AREAS.map((area) => ({
+    area,
+    items: items.filter((item) => {
+      const num = getNum(item);
+      return num >= area.start && num <= area.end;
+    }),
+  }));
+}
+
 export default function OMRSheet({ onGradingToggle, activeRange }) {
   const [answers, setAnswers] = useLocalStorage("skct-omr-answers", {});
   const [gradingInput, setGradingInput] = useState("");
@@ -20,6 +32,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [snapshots, setSnapshots] = useLocalStorage("skct-question-snapshots", {});
   const [viewingSnapshot, setViewingSnapshot] = useState(null);
+  const [viewMode, setViewMode] = useLocalStorage("skct-omr-view-mode", "area"); // "area" | "all"
 
   useEffect(() => {
     onGradingToggle?.(gradingMode);
@@ -108,6 +121,40 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
     e.stopPropagation();
   };
 
+  const renderResultItem = (q) => (
+    <div className={`question-result-item ${q.status}`} key={q.num} onClick={() => setViewingSnapshot(q.num)}>
+      <span className="question-number">{q.num}번</span>
+      {q.status === "unanswered" ? (
+        <span className="result-label">미답 (정답 {q.correctAnswer})</span>
+      ) : (
+        <span className="result-label">
+          내 답 {q.userAnswer}{q.status === "wrong" ? ` → 정답 ${q.correctAnswer}` : " (정답)"}
+        </span>
+      )}
+    </div>
+  );
+
+  const renderRow = (num) => {
+    const inactive = activeRange && (num < activeRange.start || num > activeRange.end);
+    return (
+      <div className={`omr-row ${inactive ? "inactive" : ""}`} key={num}>
+        <div className="question-number" onClick={() => setViewingSnapshot(num)}>{num}</div>
+        <div className="choices">
+          {CHOICES.map((choice) => (
+            <button
+              key={choice}
+              className={`choice-btn ${answers[num] === choice ? "selected" : ""}`}
+              onClick={() => selectAnswer(num, choice)}
+              disabled={inactive}
+            >
+              {choice}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="omr-sheet">
       <div className="omr-header">
@@ -125,6 +172,16 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
               : `현재 구간: ${activeRange.start}~${activeRange.end}번만 마킹 가능`}
           </p>
         )}
+        <div className="view-mode-toggle">
+          <label>
+            <input type="radio" name="viewMode" checked={viewMode === "area"} onChange={() => setViewMode("area")} />
+            영역별 번호
+          </label>
+          <label>
+            <input type="radio" name="viewMode" checked={viewMode === "all"} onChange={() => setViewMode("all")} />
+            전체 번호
+          </label>
+        </div>
       </div>
 
       {gradingMode ? (
@@ -173,24 +230,18 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
                     </div>
                   </div>
                   <div className="question-results-list">
-                    {questionStatuses
-                      .filter((q) => statusFilter === "all" || q.status === statusFilter)
-                      .map((q) => (
-                        <div
-                          className={`question-result-item ${q.status}`}
-                          key={q.num}
-                          onClick={() => setViewingSnapshot(q.num)}
-                        >
-                          <span className="question-number">{q.num}번</span>
-                          {q.status === "unanswered" ? (
-                            <span className="result-label">미답 (정답 {q.correctAnswer})</span>
-                          ) : (
-                            <span className="result-label">
-                              내 답 {q.userAnswer}{q.status === "wrong" ? ` → 정답 ${q.correctAnswer}` : " (정답)"}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                    {(() => {
+                      const filtered = questionStatuses.filter((q) => statusFilter === "all" || q.status === statusFilter);
+                      if (viewMode !== "area") return filtered.map(renderResultItem);
+                      return groupByArea(filtered)
+                        .filter((g) => g.items.length > 0)
+                        .map((g) => (
+                          <div className="omr-area" key={g.area.name}>
+                            <h4 className="omr-area-title">{g.area.name} ({g.area.start}~{g.area.end}번)</h4>
+                            {g.items.map(renderResultItem)}
+                          </div>
+                        ));
+                    })()}
                   </div>
                   <button className="export-pdf-btn" onClick={() => window.print()} title="인쇄 대화상자에서 'PDF로 저장'을 선택하세요">
                     오답노트 PDF로 저장
@@ -202,28 +253,18 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
         </div>
       ) : (
         <div className="omr-content">
-          <div className="omr-grid">
-            {QUESTION_NUMBERS.map((num) => {
-              const inactive = activeRange && (num < activeRange.start || num > activeRange.end);
-              return (
-                <div className={`omr-row ${inactive ? "inactive" : ""}`} key={num}>
-                  <div className="question-number" onClick={() => setViewingSnapshot(num)}>{num}</div>
-                  <div className="choices">
-                    {CHOICES.map((choice) => (
-                      <button
-                        key={choice}
-                        className={`choice-btn ${answers[num] === choice ? "selected" : ""}`}
-                        onClick={() => selectAnswer(num, choice)}
-                        disabled={inactive}
-                      >
-                        {choice}
-                      </button>
-                    ))}
-                  </div>
+          {viewMode === "area" ? (
+            AREAS.map((area) => (
+              <div className="omr-area" key={area.name}>
+                <h3 className="omr-area-title">{area.name} ({area.start}~{area.end}번)</h3>
+                <div className="omr-grid">
+                  {QUESTION_NUMBERS.slice(area.start - 1, area.end).map(renderRow)}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            ))
+          ) : (
+            <div className="omr-grid">{QUESTION_NUMBERS.map(renderRow)}</div>
+          )}
         </div>
       )}
 
@@ -236,35 +277,40 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
         <h1>오답노트</h1>
         <section>
           <h2>못 푼 문제</h2>
-          <p>
-            {questionStatuses.filter((q) => q.status === "unanswered").length > 0
-              ? questionStatuses.filter((q) => q.status === "unanswered").map((q) => q.num).join(", ")
-              : "없음"}
-          </p>
+          {groupByArea(questionStatuses.filter((q) => q.status === "unanswered")).map((g) => (
+            <p key={g.area.name}>
+              <strong>{g.area.name}:</strong> {g.items.length > 0 ? g.items.map((q) => q.num).join(", ") : "없음"}
+            </p>
+          ))}
         </section>
         <section>
           <h2>틀린 문제</h2>
-          {questionStatuses.filter((q) => q.status === "wrong").length === 0 && <p>없음</p>}
-          {questionStatuses
-            .filter((q) => q.status === "wrong")
-            .map((w) => {
-              const snap = snapshots[w.num];
-              return (
-                <div className="print-question-block" key={w.num}>
-                  <h3>{w.num}번 - 내 답 {w.userAnswer ?? "미답"} → 정답 {w.correctAnswer}</h3>
-                  <div className="print-memo">
-                    <strong>메모</strong>
-                    <p>{snap?.memo || "(메모 없음)"}</p>
-                  </div>
-                  {snap?.canvas && (
-                    <div className="print-drawing">
-                      <strong>그림판</strong>
-                      <img src={snap.canvas} alt={`${w.num}번 그림`} />
+          {groupByArea(questionStatuses.filter((q) => q.status === "wrong")).map((g) =>
+            g.items.length === 0 ? null : (
+              <div key={g.area.name} className="print-area-block">
+                <h3 className="print-area-title">{g.area.name}</h3>
+                {g.items.map((w) => {
+                  const snap = snapshots[w.num];
+                  return (
+                    <div className="print-question-block" key={w.num}>
+                      <h3>{w.num}번 - 내 답 {w.userAnswer ?? "미답"} → 정답 {w.correctAnswer}</h3>
+                      <div className="print-memo">
+                        <strong>메모</strong>
+                        <p>{snap?.memo || "(메모 없음)"}</p>
+                      </div>
+                      {snap?.canvas && (
+                        <div className="print-drawing">
+                          <strong>그림판</strong>
+                          <img src={snap.canvas} alt={`${w.num}번 그림`} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )
+          )}
+          {questionStatuses.filter((q) => q.status === "wrong").length === 0 && <p>없음</p>}
         </section>
       </div>
 

@@ -240,12 +240,24 @@
 .clear-all-btn { background-color: #718096; }
 .clear-all-btn:hover { background-color: #4a5568; }
 .active-range-notice { margin-top: 8px; font-size: 12px; font-weight: 600; color: #2f855a; }
+.view-mode-toggle { display: flex; gap: 14px; margin-top: 8px; font-size: 12px; color: #4a5568; }
+.view-mode-toggle label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
 
 .omr-content {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 15px 20px;
+}
+.omr-area { margin-bottom: 18px; }
+.omr-area:last-child { margin-bottom: 0; }
+.omr-area-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a5568;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e2e8f0;
 }
 .omr-grid {
   display: flex;
@@ -752,3 +764,5 @@
 .print-question-block { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #ddd; page-break-inside: avoid; }
 .print-memo p { white-space: pre-wrap; font-size: 13px; margin-bottom: 8px; }
 .print-drawing img { max-width: 100%; border: 1px solid #ddd; }
+.print-area-block { margin-bottom: 12px; }
+h3.print-area-title { font-size: 16px; font-weight: 700; margin: 16px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #333; }

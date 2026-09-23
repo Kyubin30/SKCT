@@ -1,17 +1,15 @@
 import { useState, useEffect } from "react";
+import { AREAS } from "../areas";
 
 const PRESETS = [75, 100];
 
-const MOCK_SECTION_NAMES = ["언어이해", "자료해석", "창의수리", "언어추리", "수열"];
 const MOCK_SECTION_SECONDS = 15 * 60;
 const MOCK_BREAK_SECONDS = 60;
-const QUESTIONS_PER_SECTION = 20; // 5 sections x 20 = 100 questions total
 
 // exam segment, break segment, exam segment, break segment, ... (no trailing break)
-const MOCK_SEGMENTS = MOCK_SECTION_NAMES.flatMap((name, i) => {
-  const range = { start: i * QUESTIONS_PER_SECTION + 1, end: (i + 1) * QUESTIONS_PER_SECTION };
-  const segs = [{ type: "exam", label: name, duration: MOCK_SECTION_SECONDS, range }];
-  if (i < MOCK_SECTION_NAMES.length - 1) segs.push({ type: "break", label: "쉬는 시간", duration: MOCK_BREAK_SECONDS, range: null });
+const MOCK_SEGMENTS = AREAS.flatMap((area, i) => {
+  const segs = [{ type: "exam", label: area.name, duration: MOCK_SECTION_SECONDS, range: { start: area.start, end: area.end } }];
+  if (i < AREAS.length - 1) segs.push({ type: "break", label: "쉬는 시간", duration: MOCK_BREAK_SECONDS, range: null });
   return segs;
 });
 
@@ -29,7 +27,7 @@ export default function Timer({ onActiveRangeChange }) {
   const [elapsed, setElapsed] = useState(0);
   const [running, setRunning] = useState(false);
 
-  const [examMode, setExamMode] = useState(false);
+  const [examMode, setExamMode] = useState(true);
   const [exam, setExam] = useState({ index: 0, remaining: MOCK_SEGMENTS[0].duration, finished: false });
 
   useEffect(() => {
