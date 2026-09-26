@@ -219,6 +219,23 @@ export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onVie
                 <div className="score-item">총 문항: {gradingResult.total}개</div>
                 <div className="score-item large">점수: {gradingResult.percentage}점</div>
               </div>
+              {viewMode === "area" && questionStatuses.length > 0 && (
+                <div className="area-score-breakdown">
+                  {groupByArea(questionStatuses).map(({ area, items }) => {
+                    const correct = items.filter((q) => q.status === "correct").length;
+                    const wrong = items.filter((q) => q.status === "wrong").length;
+                    const unanswered = items.filter((q) => q.status === "unanswered").length;
+                    return (
+                      <div key={area.name} className="area-score-row">
+                        <span className="area-score-name">{area.name}</span>
+                        <span className="area-score-stat correct">정답 {correct}</span>
+                        <span className="area-score-stat wrong">오답 {wrong}</span>
+                        <span className="area-score-stat unanswered">미답 {unanswered}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {questionStatuses.length > 0 && (
                 <div className="question-results">
                   <div className="question-results-header">

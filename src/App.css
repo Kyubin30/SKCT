@@ -423,6 +423,13 @@
 .score-display { display: flex; flex-direction: column; gap: 10px; }
 .score-item { font-size: 14px; color: #333; }
 .score-item.large { font-size: 20px; font-weight: 700; color: #2d3748; }
+.area-score-breakdown { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e2e8f0; }
+.area-score-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.area-score-name { font-weight: 600; color: #2d3748; min-width: 80px; }
+.area-score-stat { padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+.area-score-stat.correct { background: #c6f6d5; color: #276749; }
+.area-score-stat.wrong { background: #fed7d7; color: #9b2c2c; }
+.area-score-stat.unanswered { background: #fefcbf; color: #975a16; }
 .question-results {
   margin-top: 15px;
   padding: 15px;
