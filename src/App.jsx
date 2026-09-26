@@ -5,12 +5,14 @@ import OMRSheet from "./components/OMRSheet";
 import Timer from "./components/Timer";
 import NotePad from "./components/NotePad";
 import Calculator from "./components/Calculator";
+import { useLocalStorage } from "./hooks/useLocalStorage";
 import "./App.css";
 
 export default function App() {
   const tutorialRef = useRef();
   const [gradingMode, setGradingMode] = useState(false);
   const [activeRange, setActiveRange] = useState(null);
+  const [viewMode, setViewMode] = useLocalStorage("skct-omr-view-mode", "area");
   const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 768px)").matches);
 
   useEffect(() => {
@@ -19,6 +21,10 @@ export default function App() {
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
   }, []);
+
+  const handleModeChange = (isExamMode) => {
+    setViewMode(isExamMode ? "area" : "all");
+  };
 
   return (
     <>
@@ -32,13 +38,13 @@ export default function App() {
 
         <div className="omr-container">
           <div className={`omr-panel ${gradingMode ? "grading-mode" : ""}`}>
-            <OMRSheet onGradingToggle={setGradingMode} activeRange={activeRange} />
+            <OMRSheet onGradingToggle={setGradingMode} activeRange={activeRange} viewMode={viewMode} onViewModeChange={setViewMode} />
           </div>
         </div>
 
         <div className={`right-panel ${narrow ? "expanded" : ""}`}>
           <div className="timer-section">
-            <Timer onActiveRangeChange={setActiveRange} />
+            <Timer onActiveRangeChange={setActiveRange} onModeChange={handleModeChange} />
           </div>
           <div className="notepad-section">
             <NotePad />

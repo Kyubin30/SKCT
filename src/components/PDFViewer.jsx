@@ -16,6 +16,8 @@ const PDF_OPTIONS = {
   cMapUrl: `${import.meta.env.BASE_URL}pdfjs/cmaps/`,
   cMapPacked: true,
   standardFontDataUrl: `${import.meta.env.BASE_URL}pdfjs/standard_fonts/`,
+  wasmUrl: `${import.meta.env.BASE_URL}pdfjs/wasm/`,
+  stopAtErrors: false,
 };
 
 const MIN_SCALE = 0.5;
@@ -30,6 +32,7 @@ const PLACEHOLDER_HEIGHT = 848;
 // keep appearing as the user scrolls instead of blocking on the whole document.
 function LazyPage({ pageNumber, scale }) {
   const [visible, setVisible] = useState(false);
+  const [renderError, setRenderError] = useState(false);
   const slotRef = useRef(null);
 
   useEffect(() => {
@@ -52,7 +55,23 @@ function LazyPage({ pageNumber, scale }) {
   return (
     <div ref={slotRef} id={`pdf-page-${pageNumber}`} className="pdf-page-slot">
       {visible ? (
-        <Page pageNumber={pageNumber} renderTextLayer renderAnnotationLayer scale={scale} className="pdf-page" />
+        renderError ? (
+          <div
+            className="pdf-page-placeholder pdf-page-error"
+            style={{ width: PLACEHOLDER_WIDTH * scale, height: 80 * scale, display: "flex", alignItems: "center", justifyContent: "center" }}
+          >
+            <span style={{ fontSize: "0.85em", opacity: 0.5 }}>{pageNumber}페이지 렌더링 실패</span>
+          </div>
+        ) : (
+          <Page
+            pageNumber={pageNumber}
+            renderTextLayer
+            renderAnnotationLayer
+            scale={scale}
+            className="pdf-page"
+            onRenderError={() => setRenderError(true)}
+          />
+        )
       ) : (
         <div
           className="pdf-page-placeholder"

@@ -23,7 +23,7 @@ function groupByArea(items, getNum = (item) => item.num) {
   }));
 }
 
-export default function OMRSheet({ onGradingToggle, activeRange }) {
+export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onViewModeChange }) {
   const [answers, setAnswers] = useLocalStorage("skct-omr-answers", {});
   const [gradingInput, setGradingInput] = useState("");
   const [gradingResult, setGradingResult] = useState(null);
@@ -32,7 +32,7 @@ export default function OMRSheet({ onGradingToggle, activeRange }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [snapshots, setSnapshots] = useLocalStorage("skct-question-snapshots", {});
   const [viewingSnapshot, setViewingSnapshot] = useState(null);
-  const [viewMode, setViewMode] = useLocalStorage("skct-omr-view-mode", "area"); // "area" | "all"
+  const setViewMode = onViewModeChange; // lifted to App
 
   useEffect(() => {
     onGradingToggle?.(gradingMode);
