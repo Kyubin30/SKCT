@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import { AREAS } from "../areas";
 
@@ -23,7 +23,8 @@ function groupByArea(items, getNum = (item) => item.num) {
   }));
 }
 
-export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onViewModeChange }) {
+export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onViewModeChange, examMode, onRecord }) {
+  const recordIdRef = useRef(null); // current attempt's row in the 학습 기록 table
   const [answers, setAnswers] = useLocalStorage("skct-omr-answers", {});
   const [gradingInput, setGradingInput] = useState("");
   const [gradingResult, setGradingResult] = useState(null);
@@ -94,11 +95,25 @@ export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onVie
     setQuestionStatuses(statuses);
     setStatusFilter("all");
     setGradingResult({ correct, total: key.length, percentage: ((correct / key.length) * 100).toFixed(1) });
+    if (examMode) {
+      recordIdRef.current ??= Date.now();
+      onRecord?.({
+        id: recordIdRef.current,
+        label: new Date().toLocaleString("ko-KR"),
+        scores: groupByArea(statuses).map(({ items }) => ({
+          correct: items.filter((q) => q.status === "correct").length,
+          total: items.length,
+        })),
+        correct,
+        total: key.length,
+      });
+    }
   };
 
   const clearAll = () => {
     if (window.confirm("모든 답안을 지우시겠습니까?")) {
       setAnswers({});
+      recordIdRef.current = null; // next grading starts a new record
       setGradingResult(null);
       setQuestionStatuses([]);
     }

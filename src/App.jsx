@@ -13,6 +13,8 @@ export default function App() {
   const [gradingMode, setGradingMode] = useState(false);
   const [activeRange, setActiveRange] = useState(null);
   const [viewMode, setViewMode] = useLocalStorage("skct-omr-view-mode", "area");
+  const [examMode, setExamMode] = useState(true); // Timer starts in 모의고사 모드
+  const [records, setRecords] = useLocalStorage("skct-exam-records", []);
   const [narrow, setNarrow] = useState(() => window.matchMedia("(max-width: 768px)").matches);
 
   useEffect(() => {
@@ -23,14 +25,24 @@ export default function App() {
   }, []);
 
   const handleModeChange = (isExamMode) => {
+    setExamMode(isExamMode);
     setViewMode(isExamMode ? "area" : "all");
   };
 
+  // Re-grading the same attempt (e.g. after fixing a typo in the key) replaces
+  // its row instead of adding a new one, keeping any label the user edited.
+  const saveRecord = (record) =>
+    setRecords((prev) =>
+      prev.some((r) => r.id === record.id)
+        ? prev.map((r) => (r.id === record.id ? { ...record, label: r.label } : r))
+        : [record, ...prev]
+    );
+
   return (
     <>
-      <Tutorial ref={tutorialRef} />
+      <Tutorial ref={tutorialRef} records={records} setRecords={setRecords} />
       <div className={`app ${narrow ? "narrow-screen" : ""}`}>
-        <button className="help-btn" onClick={() => tutorialRef.current?.open()} title="사용 설명서 보기">❓</button>
+        <button className="help-btn" onClick={() => tutorialRef.current?.open()} title="학습 기록 / 사용 설명서">❗</button>
 
         <div className="middle-panel">
           <PDFViewer />
@@ -38,7 +50,7 @@ export default function App() {
 
         <div className="omr-container">
           <div className={`omr-panel ${gradingMode ? "grading-mode" : ""}`}>
-            <OMRSheet onGradingToggle={setGradingMode} activeRange={activeRange} viewMode={viewMode} onViewModeChange={setViewMode} />
+            <OMRSheet onGradingToggle={setGradingMode} activeRange={activeRange} viewMode={viewMode} onViewModeChange={setViewMode} examMode={examMode} onRecord={saveRecord} />
           </div>
         </div>
 

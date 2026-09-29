@@ -696,7 +696,7 @@
 .tutorial-modal {
   background-color: #fff;
   border-radius: 12px;
-  max-width: 700px;
+  max-width: 860px;
   max-height: 90vh;
   width: 100%;
   display: flex;
@@ -744,9 +744,19 @@
   font-size: 13px;
   line-height: 1.6;
 }
+.record-title { font-size: 16px; font-weight: 700; color: #2d3748; margin-bottom: 12px; }
+.record-empty { font-size: 13px; color: #718096; margin-bottom: 28px; }
+.record-table-wrap { overflow-x: auto; margin-bottom: 28px; }
+.record-table { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+.record-table th, .record-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+.record-table th { background: #f7fafc; color: #4a5568; font-weight: 600; }
+.record-table .record-total { font-weight: 700; color: #2d3748; }
+.record-table .record-label { text-align: right; color: #4a5568; }
+.record-table .record-label input { width: 160px; padding: 3px 6px; font-size: 13px; border: 1px solid #cbd5e0; border-radius: 4px; }
+.record-icon-btn { background: none; border: none; cursor: pointer; font-size: 13px; margin-left: 4px; opacity: 0.6; }
+.record-icon-btn:hover { opacity: 1; }
 .tutorial-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid #eee; }
-.btn-secondary, .btn-primary { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
-.btn-secondary { background: #e2e8f0; color: #2d3748; }
+.btn-primary { padding: 8px 16px; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
 .btn-primary { background: #2d3748; color: #fff; }
 
 /* ================= Responsive ================= */
