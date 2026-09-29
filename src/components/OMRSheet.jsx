@@ -25,6 +25,7 @@ function groupByArea(items, getNum = (item) => item.num) {
 
 export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onViewModeChange, examMode, onRecord }) {
   const recordIdRef = useRef(null); // current attempt's row in the 학습 기록 table
+  const lastCapturedRef = useRef(null); // memo+canvas last copied into a question
   const [answers, setAnswers] = useLocalStorage("skct-omr-answers", {});
   const [gradingInput, setGradingInput] = useState("");
   const [gradingResult, setGradingResult] = useState(null);
@@ -51,6 +52,11 @@ export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onVie
     }
     const canvas = localStorage.getItem("skct-notepad-canvas");
     if (!memo && !canvas) return;
+    // Only copy again once the memo/drawing has changed - otherwise the same
+    // notes would get attached to every question marked afterwards.
+    const signature = `${memo}\u0000${canvas ?? ""}`;
+    if (signature === lastCapturedRef.current) return;
+    lastCapturedRef.current = signature;
     setSnapshots((prev) => ({ ...prev, [questionNum]: { memo, canvas } }));
   };
 
