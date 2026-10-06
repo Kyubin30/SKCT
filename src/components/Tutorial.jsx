@@ -96,7 +96,7 @@ const Tutorial = forwardRef(({ records, setRecords }, ref) => {
           <div className="tutorial-section">
             <div className="section-icon">✏️</div>
             <h3>OMR 답안 작성</h3>
-            <p>1~5번 중 답을 클릭해 표시하고, 같은 번호를 다시 누르면 해제됩니다. "영역별 번호"(영역마다 1~20번)와 "전체 번호"(1~100번) 보기를 전환할 수 있습니다. 문항 번호를 클릭하면 그 문제를 풀 때 적어둔 메모/그림을 볼 수 있습니다.</p>
+            <p>1~5번 중 답을 클릭해 표시하고, 같은 번호를 다시 누르면 해제됩니다. "영역별 번호"(영역마다 1~20번)와 "전체 번호"(1~100번) 보기를 전환할 수 있습니다. 문항 번호를 클릭하면 그 문제를 풀 때 적어둔 메모/그림을 볼 수 있습니다. 메모/그림은 문항을 처음 마킹할 때 저장되며, 마킹을 해제하면 다음에 마킹하는 문항으로 넘어갑니다. "답안 초기화"를 하면 메모/그림 기록도 함께 지워집니다.</p>
           </div>
           <div className="tutorial-section">
             <div className="section-icon">✅</div>

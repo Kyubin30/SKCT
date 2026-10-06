@@ -25,7 +25,7 @@ function groupByArea(items, getNum = (item) => item.num) {
 
 export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onViewModeChange, examMode, onRecord }) {
   const recordIdRef = useRef(null); // current attempt's row in the 학습 기록 table
-  const lastCapturedRef = useRef(null); // memo+canvas last copied into a question
+  const lastCapturedRef = useRef(null); // { signature, num } of the last memo+canvas copy
   const [answers, setAnswers] = useLocalStorage("skct-omr-answers", {});
   const [gradingInput, setGradingInput] = useState("");
   const [gradingResult, setGradingResult] = useState(null);
@@ -55,12 +55,16 @@ export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onVie
     // Only copy again once the memo/drawing has changed - otherwise the same
     // notes would get attached to every question marked afterwards.
     const signature = `${memo}\u0000${canvas ?? ""}`;
-    if (signature === lastCapturedRef.current) return;
-    lastCapturedRef.current = signature;
+    if (signature === lastCapturedRef.current?.signature) return;
+    lastCapturedRef.current = { signature, num: questionNum };
     setSnapshots((prev) => ({ ...prev, [questionNum]: { memo, canvas } }));
   };
 
+  // Notes are captured only on a question's first marking - changing an answer
+  // later keeps what was saved. Unmarking is treated as a misclick: if this
+  // question took the latest notes, hand them back so the next marking gets them.
   const selectAnswer = (questionNum, choice) => {
+    const prevChoice = answers[questionNum];
     setAnswers((prev) => {
       if (prev[questionNum] === choice) {
         const next = { ...prev };
@@ -70,7 +74,16 @@ export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onVie
       return { ...prev, [questionNum]: choice };
     });
     setGradingResult(null);
-    captureSnapshot(questionNum);
+    if (prevChoice === undefined) {
+      captureSnapshot(questionNum);
+    } else if (prevChoice === choice && lastCapturedRef.current?.num === questionNum) {
+      lastCapturedRef.current = null;
+      setSnapshots((prev) => {
+        const next = { ...prev };
+        delete next[questionNum];
+        return next;
+      });
+    }
   };
 
   const submitGrading = () => {
@@ -117,8 +130,10 @@ export default function OMRSheet({ onGradingToggle, activeRange, viewMode, onVie
   };
 
   const clearAll = () => {
-    if (window.confirm("모든 답안을 지우시겠습니까?")) {
+    if (window.confirm("모든 답안과 문항별 메모/그림을 지우시겠습니까?")) {
       setAnswers({});
+      setSnapshots({});
+      lastCapturedRef.current = null;
       recordIdRef.current = null; // next grading starts a new record
       setGradingResult(null);
       setQuestionStatuses([]);
